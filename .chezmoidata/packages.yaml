@@ -1,0 +1,34 @@
+packages:
+  darwin:
+    uv: []
+    homebrew:
+      taps:
+        - farion1231/ccswitch
+        - oven-sh/bun
+      brew:
+        - chezmoi
+        - bun
+        - gh
+        - node
+      casks:
+        - cc-switch
+        - claude
+        - ghostty
+        - orbstack
+        - snipaste
+        - cherry-studio
+        - cursor
+        - neteasemusic
+        - raycast
+        - youdaodict
+  linux:
+    uv: []
+    homebrew:
+      taps:
+        - farion1231/ccswitch
+        - oven-sh/bun
+      brew:
+        - chezmoi
+        - bun
+        - gh
+        - node

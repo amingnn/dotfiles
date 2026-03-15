@@ -1,0 +1,33 @@
+#!/bin/sh
+set -eu
+
+{{ if and (ne .chezmoi.os "darwin") (ne .chezmoi.os "linux") }}
+exit 0
+{{ end }}
+
+if command -v brew >/dev/null 2>&1; then
+  exit 0
+fi
+
+if ! command -v curl >/dev/null 2>&1; then
+  echo "[chezmoi] 未找到 curl；无法安装 Homebrew。" >&2
+  exit 1
+fi
+
+echo "[chezmoi] 正在安装 Homebrew..."
+NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+if ! command -v brew >/dev/null 2>&1; then
+  if [ -x /opt/homebrew/bin/brew ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [ -x /usr/local/bin/brew ]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  elif [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+  fi
+fi
+
+command -v brew >/dev/null 2>&1 || {
+  echo "[chezmoi] Homebrew 已安装，但当前进程仍找不到 brew；请检查 PATH。" >&2
+  exit 1
+}

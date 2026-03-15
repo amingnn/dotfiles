@@ -1,0 +1,33 @@
+#!/bin/sh
+set -eu
+
+{{ if and (ne .chezmoi.os "darwin") (ne .chezmoi.os "linux") }}
+exit 0
+{{ end }}
+
+has_uv() {
+  command -v uv >/dev/null 2>&1 && return 0
+  [ -x "$HOME/.local/bin/uv" ] && return 0
+  [ -x "$HOME/.cargo/bin/uv" ] && return 0
+  [ -x /opt/homebrew/bin/uv ] && return 0
+  [ -x /usr/local/bin/uv ] && return 0
+  [ -x /home/linuxbrew/.linuxbrew/bin/uv ] && return 0
+  return 1
+}
+
+if has_uv; then
+  exit 0
+fi
+
+if ! command -v curl >/dev/null 2>&1; then
+  echo "[chezmoi] 未找到 curl；无法安装 uv。" >&2
+  exit 1
+fi
+
+echo "[chezmoi] 正在安装 uv..."
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+has_uv || {
+  echo "[chezmoi] 已尝试安装 uv，但仍未检测到 uv；请检查 PATH（常见为 ~/.local/bin）。" >&2
+  exit 1
+}

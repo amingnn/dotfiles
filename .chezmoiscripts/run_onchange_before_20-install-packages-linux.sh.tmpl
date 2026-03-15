@@ -1,0 +1,31 @@
+#!/bin/sh
+set -eu
+
+{{ if ne .chezmoi.os "linux" }}
+exit 0
+{{ end }}
+
+if ! command -v brew >/dev/null 2>&1; then
+  if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+  fi
+fi
+command -v brew >/dev/null 2>&1 || {
+  echo "[chezmoi] 未找到 brew；请先安装 Homebrew，或把 brew 加入 PATH。" >&2
+  exit 1
+}
+
+tmp="${TMPDIR:-/tmp}/Brewfile.chezmoi.$$"
+trap 'rm -f "$tmp"' EXIT INT TERM HUP
+
+cat >"$tmp" <<'EOF'
+{{ range .packages.linux.homebrew.taps }}
+tap "{{ . }}"
+{{ end }}
+{{ range .packages.linux.homebrew.brew }}
+brew "{{ . }}"
+{{ end }}
+EOF
+
+echo "[chezmoi] 正在通过 brew bundle 安装 Homebrew 软件包..."
+brew bundle --file="$tmp"
