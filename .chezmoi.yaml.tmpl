@@ -10,5 +10,9 @@ data:
   email: "item_aming@163.com"
   proxy: "http://127.0.0.1:7897"
 
-# 提示：如需更改配置，请打开并编辑：
-# /Users/aming/.config/chezmoi/chezmoi.yaml
+# chezmoi 支持在源目录发生变更时自动 git commit / push（默认关闭）。
+# [git]
+#     autoCommit = true
+#     autoPush = false
+#
+# 注意：开启 autoPush 可能会把误加入的密钥推送到远端仓库。
