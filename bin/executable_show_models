@@ -1,0 +1,54 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#   "requests>=2.31",
+# ]
+# ///
+import requests
+import shutil
+
+
+url = "https://ai.071129.xyz/v1/models"
+headers = {
+    "Authorization": "Bearer REDACTED"
+}
+
+
+def _print_pretty(ids):
+    ids = sorted(ids)
+    if not ids:
+        print("(空)")
+        return
+
+    width = shutil.get_terminal_size((100, 24)).columns
+    idx_w = len(str(len(ids)))
+    items = [f"{str(i).rjust(idx_w)}. {mid}" for i, mid in enumerate(ids, 1)]
+
+    max_len = max(len(s) for s in items)
+    gap = 2
+    col_w = max_len + gap
+    cols = max(1, width // col_w)
+    rows = (len(items) + cols - 1) // cols
+
+    for r in range(rows):
+        row = []
+        for c in range(cols):
+            k = r + c * rows
+            if k >= len(items):
+                continue
+            s = items[k]
+            row.append(s + " " * (max_len - len(s)))
+        print((" " * gap).join(row).rstrip())
+
+
+try:
+    response = requests.get(url, headers=headers, verify=False)
+    models = response.json().get("data", [])
+    ids = [m.get("id") for m in models if isinstance(m, dict) and m.get("id")]
+
+    print("当前 API 支持的模型列表：")
+    print(f"共 {len(ids)} 个")
+    _print_pretty(ids)
+except Exception as e:
+    print(f"查询失败: {e}")

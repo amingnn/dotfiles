@@ -5,10 +5,12 @@ export http_proxy={{ .proxy | quote }}
 export https_proxy={{ .proxy | quote }}
 {{ end -}}
 
+# PATH
+export PATH="$HOME/bin:$PATH" # add my bin path
+export PATH="$HOME/.bun/bin:$PATH" # add bun path
+
 # 环境变量
 export MANPATH="/usr/local/man:$MANPATH"
 export EDITOR='code'
 
-# PATH
-export PATH="$HOME/.bun/bin:$PATH" # add bun path
 
