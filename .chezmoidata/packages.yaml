@@ -7,7 +7,7 @@ packages:
         - oven-sh/bun
       brew:
         - chezmoi
-        - bun
+        - oven-sh/bun/bun
         - gh
         - node
       casks:
@@ -25,10 +25,5 @@ packages:
     uv: []
     homebrew:
       taps:
-        - farion1231/ccswitch
-        - oven-sh/bun
       brew:
         - chezmoi
-        - bun
-        - gh
-        - node
