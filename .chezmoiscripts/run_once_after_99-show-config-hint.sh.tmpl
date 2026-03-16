@@ -1,6 +1,27 @@
 #!/bin/sh
 set -eu
 
+# 尝试设置默认 shell（可能失败：无 sudo、用户不在 /etc/passwd、chsh 被禁用等）
+if command -v chsh >/dev/null 2>&1; then
+  if [ -x /usr/bin/zsh ]; then
+    if sudo chsh -s "/usr/bin/zsh" >/dev/null 2>&1; then
+      echo "[chezmoi] 已尝试将默认 shell 设置为 /usr/bin/zsh"
+      # chsh 对当前会话不生效；如果在交互式终端里执行，直接切到 zsh 让用户立刻进入新 shell
+      if [ -t 0 ] && [ -t 1 ]; then
+        echo "[chezmoi] 正在启动 zsh（登录 shell）..."
+        exec /usr/bin/zsh -l
+      fi
+    else
+      echo "[chezmoi] 未能自动设置默认 shell，请手动执行：sudo chsh -s \"/usr/bin/zsh\""
+    fi
+  else
+    echo "[chezmoi] 未找到 /usr/bin/zsh，请手动执行：sudo chsh -s \"$(command -v zsh)\""
+  fi
+else
+  echo "[chezmoi] 未找到 chsh，请手动执行：sudo chsh -s \"/usr/bin/zsh\""
+fi
+echo "如果未成功，请尝试手动执行：sudo chsh -s \"$(command -v zsh)\" && zsh"
+
 echo ""
 echo ""
 echo "[chezmoi] 首次配置完成：如需修改配置，请编辑："
