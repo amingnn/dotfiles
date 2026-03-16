@@ -1,0 +1,43 @@
+#!/bin/sh
+set -eu
+
+{{ if and (ne .chezmoi.os "darwin") (ne .chezmoi.os "linux") }}
+exit 0
+{{ end }}
+
+if command -v git >/dev/null 2>&1; then
+  exit 0
+fi
+
+echo "[chezmoi] 未找到 git，正在尝试安装..."
+
+sudo_cmd=""
+if [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1; then
+  sudo_cmd="sudo"
+fi
+
+if command -v apt-get >/dev/null 2>&1; then
+  $sudo_cmd apt-get update -y
+  $sudo_cmd apt-get install -y git
+elif command -v dnf >/dev/null 2>&1; then
+  $sudo_cmd dnf install -y git
+elif command -v yum >/dev/null 2>&1; then
+  $sudo_cmd yum install -y git
+elif command -v pacman >/dev/null 2>&1; then
+  $sudo_cmd pacman -Sy --noconfirm git
+elif command -v apk >/dev/null 2>&1; then
+  $sudo_cmd apk add --no-cache git
+elif command -v zypper >/dev/null 2>&1; then
+  $sudo_cmd zypper --non-interactive install git
+elif [ "{{ .chezmoi.os }}" = "darwin" ]; then
+  echo "[chezmoi] macOS 未找到 git：请先安装 Xcode Command Line Tools（例如运行：xcode-select --install）" >&2
+  exit 1
+else
+  echo "[chezmoi] 未识别的系统/包管理器，无法自动安装 git，请手动安装后重试。" >&2
+  exit 1
+fi
+
+command -v git >/dev/null 2>&1 || {
+  echo "[chezmoi] git 安装后仍未找到 git，请检查 PATH。" >&2
+  exit 1
+}
