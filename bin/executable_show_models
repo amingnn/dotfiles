@@ -5,14 +5,12 @@
 #   "requests>=2.31",
 # ]
 # ///
-import requests
+import argparse
+import json
 import shutil
-
-
-url = "https://ai.071129.xyz/v1/models"
-headers = {
-    "Authorization": "Bearer REDACTED"
-}
+import os
+import subprocess
+import sys
 
 
 def _print_pretty(ids):
@@ -42,13 +40,48 @@ def _print_pretty(ids):
         print((" " * gap).join(row).rstrip())
 
 
-try:
-    response = requests.get(url, headers=headers, verify=False)
-    models = response.json().get("data", [])
-    ids = [m.get("id") for m in models if isinstance(m, dict) and m.get("id")]
+def _read_models(api_url, api_key):
+    base = (api_url or "").rstrip("/")
+    if not base:
+        raise SystemExit("缺少 api_url（参数或环境变量 NEW_API）。")
+    if not api_key:
+        raise SystemExit("缺少 api_key（参数或环境变量 NEW_API_KEY）。")
 
-    print("当前 API 支持的模型列表：")
+    url = f"{base}/models"
+    get_bin = os.path.join(os.path.dirname(__file__), "get")
+    cmd = [get_bin, "-H", f"Authorization: Bearer {api_key}", url]
+    p = subprocess.run(cmd, check=False, capture_output=True, text=True)
+    if p.returncode != 0:
+        msg = (p.stderr or p.stdout or "").strip()
+        raise SystemExit(f"查询失败（get 退出码 {p.returncode}）：{msg}")
+
+    try:
+        payload = json.loads(p.stdout or "{}")
+    except json.JSONDecodeError as e:
+        head = (p.stdout or "")[:200].replace("\n", "\\n")
+        raise SystemExit(f"返回不是 JSON：{e}；输出前 200 字符：{head}")
+
+    models = payload.get("data", [])
+    if not isinstance(models, list):
+        return []
+    return [m.get("id") for m in models if isinstance(m, dict) and m.get("id")]
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(add_help=True)
+    parser.add_argument("api_url", nargs="?", default=None, help="API base URL（可省略，用 NEW_API）")
+    parser.add_argument("api_key", nargs="?", default=None, help="API key（可省略，用 NEW_API_KEY）")
+    args = parser.parse_args(argv)
+
+    api_url = args.api_url or os.getenv("NEW_API", "").strip()
+    api_key = args.api_key or os.getenv("NEW_API_KEY")
+
+    ids = _read_models(api_url, api_key)
+    print(f"{api_url} 支持的模型列表：")
     print(f"共 {len(ids)} 个")
     _print_pretty(ids)
-except Exception as e:
-    print(f"查询失败: {e}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

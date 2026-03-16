@@ -1,99 +1,87 @@
-#!/bin/sh
-#
-# 对一个 URL 发起请求，并把请求头/响应头打印出来。
-#
-# 设计目标：
-# - 够“直白”：只基于 curl 的 verbose 输出做轻度整理。
-# - 够“可调试”：默认只打印 headers；需要看 body 时用 --context。
-#
-# 用法：
-#   get [--context|-c] [curl 参数...] URL
-#
-# 选项：
-#   --context, -c   额外打印响应内容（response body）。注意：二进制内容会原样输出。
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#   "requests>=2.31",
+# ]
+# ///
+"""
+用 requests 对一个 URL 发起 GET，并把请求/响应头打印出来。
 
-set -e
+用法：
+  get URL
 
-context=0
+选项：
+  -h, --head    只输出响应头
+  -s, --status  只输出状态码
+  -H, --header  追加请求头（可重复，格式：'Key: Value'）
+  --help        显示帮助
+"""
 
-usage() {
-  echo "用法：get [--context|-c] [curl 参数...] URL" >&2
-}
+import argparse
+import sys
 
-while [ $# -gt 0 ]
-do
-  case "$1" in
-    --context|-c)
-      context=1
-      shift
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    --)
-      shift
-      break
-      ;;
-    *)
-      break
-      ;;
-  esac
-done
+import requests
 
-if [ $# -lt 1 ]
-then
-  echo "错误：缺少 URL。" >&2
-  usage
-  exit 2
-fi
 
-tmp_body="$(mktemp -t get.body.XXXXXX)"
-tmp_v="$(mktemp -t get.verbose.XXXXXX)"
+def _parse_headers(items):
+    headers = {}
+    for raw in items or []:
+        k, sep, v = raw.partition(":")
+        if not sep:
+            raise ValueError(f"无效 header（需要 'Key: Value'）：{raw}")
+        headers[k.strip()] = v.lstrip()
+    return headers
 
-cleanup() {
-  rm -f "$tmp_body" "$tmp_v"
-}
-trap cleanup EXIT INT TERM
 
-# curl 的 -v 输出走 stderr；body 走 stdout。
-# 这里把两者分开存下来，再做格式化输出。
-set +e
-curl -sS -v "$@" >"$tmp_body" 2>"$tmp_v"
-status=$?
-set -e
+def get(url, *, headers=None):
+    try:
+        response = requests.get(url, headers=headers, verify=False)
+        return response
+    except Exception as e:
+        print(f"请求失败: {e}")
+        return None
 
-awk '
-  BEGIN { req_n=0; res_n=0; in_req=0; in_res=0 }
-  /^\* / { next }
 
-  /^> / {
-    line=$0
-    sub(/^> /, "", line)
-    if (!in_req) { req_n++; print "# --- Request " req_n " ---"; in_req=1 }
-    print line
-    if (line == "") { in_req=0; print "" }
-    next
-  }
+def main(argv=None):
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("-h", "--head", action="store_true", help="只输出响应头")
+    parser.add_argument("-s", "--status", action="store_true", help="只输出状态码")
+    parser.add_argument(
+        "-H",
+        "--header",
+        action="append",
+        default=[],
+        help="追加请求头（可重复，格式：'Key: Value'）",
+    )
+    parser.add_argument("--help", action="help", help="显示帮助")
+    parser.add_argument("url")
+    args = parser.parse_args(argv)
 
-  /^< / {
-    line=$0
-    sub(/^< /, "", line)
-    if (!in_res) { res_n++; print "# --- Response " res_n " ---"; in_res=1 }
-    print line
-    if (line == "") { in_res=0; print "" }
-    next
-  }
-  {
-    # 其它 verbose 行（比如 TLS/连接细节）默认不打印，避免噪音。
-    next
-  }
-' "$tmp_v"
+    try:
+        headers = _parse_headers(args.header)
+    except ValueError as e:
+        print(str(e))
+        return 2
 
-if [ "$context" -eq 1 ]
-then
-  echo "# --- Body ---"
-  cat "$tmp_body"
-fi
+    response = get(args.url, headers=headers or None)
+    if response is None:
+        return 1
 
-exit "$status"
+    if args.head or args.status:
+        if args.head:
+            for k, v in response.headers.items():
+                print(f"{k}: {v}")
+        if args.status:
+            print(response.status_code)
+        return 0
+
+    try:
+        sys.stdout.write(response.text)
+    except UnicodeEncodeError:
+        sys.stdout.buffer.write(response.content)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
