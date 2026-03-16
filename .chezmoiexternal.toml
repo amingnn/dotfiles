@@ -1,0 +1,23 @@
+# 从外部来源引入文件/目录（参考官方文档 include-files-from-elsewhere）
+
+[".oh-my-zsh"]
+type = "archive"
+url = "https://github.com/ohmyzsh/ohmyzsh/archive/refs/heads/master.tar.gz"
+exact = true
+stripComponents = 1
+refreshPeriod = "168h"
+
+[".oh-my-zsh/custom/plugins/zsh-autosuggestions"]
+type = "archive"
+url = "https://github.com/zsh-users/zsh-autosuggestions/archive/refs/heads/master.tar.gz"
+exact = true
+stripComponents = 1
+refreshPeriod = "168h"
+
+[".oh-my-zsh/custom/plugins/zsh-syntax-highlighting"]
+type = "archive"
+url = "https://github.com/zsh-users/zsh-syntax-highlighting/archive/refs/heads/master.tar.gz"
+exact = true
+stripComponents = 1
+refreshPeriod = "168h"
+

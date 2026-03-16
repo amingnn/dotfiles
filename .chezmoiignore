@@ -1,0 +1,3 @@
+# oh-my-zsh 会生成缓存与补全文件：不要纳入管理
+.oh-my-zsh/cache/completions/*
+

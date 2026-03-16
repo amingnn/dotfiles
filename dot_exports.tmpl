@@ -1,0 +1,14 @@
+#!/bin/sh
+{{- if .proxy }}
+# 代理
+export http_proxy={{ .proxy | quote }}
+export https_proxy={{ .proxy | quote }}
+{{ end -}}
+
+# 环境变量
+export MANPATH="/usr/local/man:$MANPATH"
+export EDITOR='code'
+
+# PATH
+export PATH="$HOME/.bun/bin:$PATH" # add bun path
+

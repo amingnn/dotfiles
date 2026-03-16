@@ -1,0 +1,17 @@
+#!/bin/sh
+set -eu
+
+api_file="$HOME/.api"
+
+if [ -f "$api_file" ]; then
+  exit 0
+fi
+
+umask 077
+cat >"$api_file" <<'EOF'
+#!/bin/sh
+# 仅创建一次：chezmoi 不管理此文件内容
+# 在此写入你的私密 API Key，例如：
+# export DEEPSEEK_API="sk-xxxx"
+EOF
+chmod 600 "$api_file" 2>/dev/null || true

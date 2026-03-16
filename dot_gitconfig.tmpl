@@ -1,10 +1,19 @@
 [user]
-	name = {{ .name }}
-	email = {{ .email }}
+{{- $name := (index . "name") | default "" -}}
+{{- $email := (index . "email") | default "" -}}
+{{- if ne $name "" }}
+	name = {{ $name }}
+{{- end }}
+{{- if ne $email "" }}
+	email = {{ $email }}
+{{- end }}
 [core]
 	editor = code --wait
 	excludesfile = ~/.gitignore
+{{- $proxy := (index . "proxy") | default "" -}}
+{{- if ne $proxy "" }}
 [http]
-	proxy = {{ .proxy }}
+	proxy = {{ $proxy }}
 [https]
-	proxy = {{ .proxy }}
+	proxy = {{ $proxy }}
+{{- end }}
