@@ -1,3 +1,31 @@
-# oh-my-zsh 会生成缓存与补全文件：不要纳入管理
-.oh-my-zsh/cache/completions/*
+# 通用：系统/编辑器垃圾
+.DS_Store
+.Trash/**
 
+# shell：历史/缓存/编译产物
+.zsh_history
+.zsh_sessions/**
+.zcompdump*
+**/*.zwc
+
+# chezmoi：缓存/临时
+.cache/chezmoi/**
+
+# node/bun/npm：缓存与状态
+.npm/**
+.bun/**
+
+# ssh：永远不要纳入私钥
+.ssh/id_*
+.ssh/*.pem
+.ssh/*.key
+
+# API 文件：只创建，不管理
+.api
+
+# GitHub CLI：避免把登录态/密钥纳入（如需同步请只添加 config.yml）
+.config/gh/hosts.yml
+
+# oh-my-zsh：运行时缓存不要纳入管理
+.oh-my-zsh/cache/**
+.oh-my-zsh/log/**
