@@ -42,3 +42,4 @@
 # # Just for example:
 # resize-overlay-duration = 4s 200ms
 keybind = global:super+`=toggle_quick_terminal
+keybind = global:super+·=toggle_quick_terminal

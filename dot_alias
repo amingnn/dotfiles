@@ -1,4 +1,13 @@
 #!/bin/sh
-alias bll="brew leaves"  # 列出自己brew安装的非cask应用
+alias bll='brew leaves'  # 列出自己brew安装的非cask应用
 alias claude='NODE_TLS_REJECT_UNAUTHORIZED=0 claude'
+
+# 管理chezmoi
+alias c='chezmoi'
+alias cadd='c add '
+alias cedit='c edit '
+alias ceditg='cedit "$HOME/Library/Application Support/com.mitchellh.ghostty/config"'
+alias cdiff='c diff '
+alias capply='c apply -v '
+alias ccd='c cd '
 
