@@ -10,6 +10,7 @@ packages:
         - oven-sh/bun/bun
         - gh
         - node
+        - fd
       casks:
         - cc-switch
         - obsidian
@@ -28,3 +29,4 @@ packages:
       taps:
       brew:
         - chezmoi
+        - fd

@@ -1,87 +1,83 @@
 #!/usr/bin/env -S uv run --script
 # /// script
-# requires-python = ">=3.11"
-# dependencies = [
-#   "requests>=2.31",
-# ]
+# dependencies = ["requests", "rich"]
 # ///
 import argparse
-import json
-import shutil
 import os
-import subprocess
 import sys
+import requests
 
+from rich.console import Console
+from rich.columns import Columns
 
 def _print_pretty(ids):
-    ids = sorted(ids)
+    console = Console()
     if not ids:
-        print("(空)")
+        console.print("[yellow](空)[/yellow]")
         return
 
-    width = shutil.get_terminal_size((100, 24)).columns
+    ids = sorted(ids)
     idx_w = len(str(len(ids)))
-    items = [f"{str(i).rjust(idx_w)}. {mid}" for i, mid in enumerate(ids, 1)]
-
-    max_len = max(len(s) for s in items)
-    gap = 2
-    col_w = max_len + gap
-    cols = max(1, width // col_w)
-    rows = (len(items) + cols - 1) // cols
-
-    for r in range(rows):
-        row = []
-        for c in range(cols):
-            k = r + c * rows
-            if k >= len(items):
-                continue
-            s = items[k]
-            row.append(s + " " * (max_len - len(s)))
-        print((" " * gap).join(row).rstrip())
+    items = [f"[green]{str(i).rjust(idx_w)}.[/green] {mid}" for i, mid in enumerate(ids, 1)]
+    
+    console.print(Columns(items, equal=True, expand=False, column_first=True))
 
 
-def _read_models(api_url, api_key):
+def _read_data(api_url, api_key, path):
     base = (api_url or "").rstrip("/")
     if not base:
-        raise SystemExit("缺少 api_url（参数或环境变量 NEW_API）。")
+        raise SystemExit("错误: 缺少 api_url (通过参数或环境变量 NEW_API 提供)。")
     if not api_key:
-        raise SystemExit("缺少 api_key（参数或环境变量 NEW_API_KEY）。")
+        raise SystemExit("错误: 缺少 api_key (通过参数或环境变量 NEW_API_KEY 提供)。")
 
-    url = f"{base}/models"
-    get_bin = os.path.join(os.path.dirname(__file__), "get")
-    cmd = [get_bin, "-H", f"Authorization: Bearer {api_key}", url]
-    p = subprocess.run(cmd, check=False, capture_output=True, text=True)
-    if p.returncode != 0:
-        msg = (p.stderr or p.stdout or "").strip()
-        raise SystemExit(f"查询失败（get 退出码 {p.returncode}）：{msg}")
-
+    # 根据 path 参数动态构建 URL
+    url = f"{base}/{path.lstrip('/')}"
+    
     try:
-        payload = json.loads(p.stdout or "{}")
-    except json.JSONDecodeError as e:
-        head = (p.stdout or "")[:200].replace("\n", "\\n")
-        raise SystemExit(f"返回不是 JSON：{e}；输出前 200 字符：{head}")
+        response = requests.get(
+            url, 
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=15,
+            verify=False  # 保持测试脚本的灵活性
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except Exception as e:
+        raise SystemExit(f"请求或解析失败: {e}")
 
-    models = payload.get("data", [])
-    if not isinstance(models, list):
+    # 兼容 OpenAI /models 标准和某些 API 的 /tags 结构
+    data = payload.get("data", payload if isinstance(payload, list) else [])
+    
+    if not isinstance(data, list):
         return []
-    return [m.get("id") for m in models if isinstance(m, dict) and m.get("id")]
+        
+    # 提取 ID (兼容对象列表或字符串列表)
+    return [
+        item.get("id") if isinstance(item, dict) else str(item) 
+        for item in data 
+        if (isinstance(item, dict) and item.get("id")) or isinstance(item, str)
+    ]
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(add_help=True)
-    parser.add_argument("api_url", nargs="?", default=None, help="API base URL（可省略，用 NEW_API）")
-    parser.add_argument("api_key", nargs="?", default=None, help="API key（可省略，用 NEW_API_KEY）")
+    parser = argparse.ArgumentParser(prog="models", add_help=True)
+    parser.add_argument("api_url", nargs="?", default=os.getenv("NEW_API"), help="API base URL")
+    parser.add_argument("api_key", nargs="?", default=os.getenv("NEW_API_KEY"), help="API key")
+    parser.add_argument("-p", "--path", default="models", help="API endpoint path (default: models, e.g., tags)")
+    
     args = parser.parse_args(argv)
 
-    api_url = args.api_url or os.getenv("NEW_API", "").strip()
-    api_key = args.api_key or os.getenv("NEW_API_KEY")
-
-    ids = _read_models(api_url, api_key)
-    print(f"{api_url} 支持的模型列表：")
-    print(f"共 {len(ids)} 个")
+    ids = _read_data(args.api_url, args.api_key, args.path)
+    
+    console = Console()
+    console.print(f"\n[bold blue]{args.api_url}[/bold blue] (/{args.path}) 支持列表：")
+    console.print(f"共 [bold green]{len(ids)}[/bold green] 个条目")
     _print_pretty(ids)
+    print() 
     return 0
 
 
 if __name__ == "__main__":
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     raise SystemExit(main())

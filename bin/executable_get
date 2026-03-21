@@ -1,87 +1,59 @@
 #!/usr/bin/env -S uv run --script
 # /// script
-# requires-python = ">=3.11"
-# dependencies = [
-#   "requests>=2.31",
-# ]
+# dependencies = ["requests", "urllib3"]
 # ///
 """
-用 requests 对一个 URL 发起 GET，并把请求/响应头打印出来。
-
-用法：
-  get URL
-
-选项：
-  -h, --head    只输出响应头
-  -s, --status  只输出状态码
-  -H, --header  追加请求头（可重复，格式：'Key: Value'）
-  --help        显示帮助
+简单的 HTTP GET 工具.
+Usage: get <URL> [-v]
 """
 
 import argparse
 import sys
-
 import requests
+import urllib3
 
-
-def _parse_headers(items):
-    headers = {}
-    for raw in items or []:
-        k, sep, v = raw.partition(":")
-        if not sep:
-            raise ValueError(f"无效 header（需要 'Key: Value'）：{raw}")
-        headers[k.strip()] = v.lstrip()
-    return headers
-
-
-def get(url, *, headers=None):
-    try:
-        response = requests.get(url, headers=headers, verify=False)
-        return response
-    except Exception as e:
-        print(f"请求失败: {e}")
-        return None
-
+# Disable SSL warnings for cleaner output
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("-h", "--head", action="store_true", help="只输出响应头")
-    parser.add_argument("-s", "--status", action="store_true", help="只输出状态码")
-    parser.add_argument(
-        "-H",
-        "--header",
-        action="append",
-        default=[],
-        help="追加请求头（可重复，格式：'Key: Value'）",
-    )
-    parser.add_argument("--help", action="help", help="显示帮助")
-    parser.add_argument("url")
+    parser = argparse.ArgumentParser(prog="get", add_help=True)
+    parser.add_argument("-v", "--verbose", action="store_true", help="打印响应内容")
+    parser.add_argument("url", help="目标 URL")
     args = parser.parse_args(argv)
 
-    try:
-        headers = _parse_headers(args.header)
-    except ValueError as e:
-        print(str(e))
-        return 2
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
 
-    response = get(args.url, headers=headers or None)
-    if response is None:
+    try:
+        response = requests.get(args.url, headers=headers, verify=False, timeout=15)
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
         return 1
 
-    if args.head or args.status:
-        if args.head:
-            for k, v in response.headers.items():
-                print(f"{k}: {v}")
-        if args.status:
-            print(response.status_code)
-        return 0
+    # 1. Status Code
+    print(f"Status: {response.status_code}")
+    
+    # 2. Request Headers
+    print("\n[Request Headers]")
+    for k, v in response.request.headers.items():
+        print(f"  {k}: {v}")
 
-    try:
-        sys.stdout.write(response.text)
-    except UnicodeEncodeError:
-        sys.stdout.buffer.write(response.content)
+    # 3. Response Headers
+    print("\n[Response Headers]")
+    for k, v in response.headers.items():
+        print(f"  {k}: {v}")
+
+    # 4. Optional Body
+    if args.verbose:
+        print("\n[Body]")
+        try:
+            sys.stdout.write(response.text)
+        except UnicodeEncodeError:
+            sys.stdout.buffer.write(response.content)
+        print() 
+
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())
