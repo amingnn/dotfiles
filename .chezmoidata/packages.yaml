@@ -11,6 +11,7 @@ packages:
         - gh
         - node
         - fd
+        - mysql
       casks:
         - cc-switch
         - obsidian
@@ -29,4 +30,7 @@ packages:
       taps:
       brew:
         - chezmoi
+        - git
+        - gh
         - fd
+        - mysql
