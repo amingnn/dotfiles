@@ -12,6 +12,8 @@ packages:
         - node
         - fd
         - mysql
+        - fastfetch
+        - rust
       casks:
         - cc-switch
         - obsidian
@@ -24,6 +26,8 @@ packages:
         - raycast
         - youdaodict
         - orbstack
+        - obs
+        - navicat-premium
   linux:
     uv: []
     homebrew:
@@ -34,3 +38,5 @@ packages:
         - gh
         - fd
         - mysql
+        - fastfetch
+        - rust
