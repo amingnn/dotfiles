@@ -13,3 +13,24 @@ alias ccd='c cd '
 alias clist='c list --include=files'
 alias clistg='clist | grep -Ev -e "^.oh-my-zsh" -e "^.chezmoiscripts"'
 
+# git 覆盖
+# 基础与同步
+alias gstatus='git status'                      # 极简状态查看
+alias gpull='git pull'                          # 完整拉取，语义清晰
+alias gpush='git push'                          # 完整推送
+alias gpushf='git push --force'                 # 强力推送（后悔药专属）
+# 提交与撤销
+alias gadd='git add'                            # 追踪修改
+alias gadda='git add --all'                     # 全量追踪
+alias gcommit='git commit -m'                   # 快捷提交
+alias gcommita='git commit --amend'             # 修正最后一次提交
+alias gcommitan='git commit --amend --no-edit'  # 修正提交且不改信息
+alias greseth='git reset --hard'                # 硬重置（危险但高效）
+# 分支管理
+alias gbranch='git branch'                      # 分支列表
+alias gcheckout='git checkout'                  # 切换分支
+alias gcheckoutb='git checkout -b'              # 创建并切换分支
+alias gmerge='git merge'                        # 合并分支
+# other
+alias glog='git log --oneline --decorate'       # 源 glo
+alias gloga='git log --graph --pretty="%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset" --all'
